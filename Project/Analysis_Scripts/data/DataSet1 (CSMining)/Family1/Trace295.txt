@@ -1,0 +1,1 @@
+ LoadLibraryA GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress LoadLibraryA GetProcAddress GetProcAddress LoadLibraryA GetProcAddress RegOpenKeyExA FreeLibrary GetProcAddress GetProcAddress GetProcAddress GetModuleHandleA GetProcAddress GetModuleHandleA GetProcAddress RegCreateKeyExA 
