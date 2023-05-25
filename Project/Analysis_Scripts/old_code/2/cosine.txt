@@ -1,0 +1,155 @@
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.utils import shuffle
+import numpy as np
+
+
+def SM_cosine(documents):
+    vectorizer = TfidfVectorizer()
+    
+    # tokenize and build vocabulary of all documents
+    feature_matrix = vectorizer.fit_transform(documents).astype(float)
+    
+    # cosine simlarity between all document vectors 
+    cosine_matrix = cosine_similarity(feature_matrix) 
+    
+    return cosine_matrix;
+
+def inverted_matrix(similarity_matrix): 
+    inv_sm = []
+    for x in similarity_matrix:
+        temp = []
+        for y in x: # for every value in similarity_matrix
+            if y == 0:
+                temp.append(9999)
+            else:
+                temp.append(1/y)
+    
+        inv_sm.append(temp)
+        
+    return inv_sm
+
+def SM_invjaccard(documents):
+    matrix = []
+    for x in documents:
+        temp = []
+        for y in documents:
+            a = set(x.split(' ')) # tokenize document x
+            b = set(y.split(' ')) # tokenize document y
+            c = a.intersection(b) # find intersection between two trace docuemnts: x, y 
+            j = float(len(c)) / (len(a) + len(b) - len(c)) # jaccard calculation
+            
+            inv = 0 # inverse jaccard values
+            if j == 0:
+                inv = 9999
+            else:
+                inv = float(1/j) 
+            
+            temp.append(inv)
+        matrix.append(temp)
+
+    return matrix;
+
+
+def calc_and_save_jaccard_matrix(traces):
+    # INVERTED JACCARD MATRIX 
+    ismj = SM_invjaccard(traces)    
+
+    # SAVE Inverted Jaccard Matrix
+    SMj = np.asarray(ismj)
+    np.savetxt("SMj.csv", SMj, delimiter=",")
+    
+    return ismj
+
+
+def calc_and_save_cosine_matrix(traces):
+    # INVERTED COSINE MATRIX 
+    smc_nomin = SM_cosine(traces)
+    ismc = inverted_matrix(smc_nomin)
+
+    # SAVE Inverted Cosine Matrix
+    SMc = np.asarray(ismc)
+    np.savetxt("SMc.csv", SMc, delimiter=",")
+    
+    return ismc
+
+
+### DATASET  # https://github.com/ocatak/malware_api_class 
+data_path = r'all_analysis_data.txt'
+labels_path = r'labels.txt'
+
+f = open(data_path, "r") #open all_analysis_data.txt
+all_traces = (f.read().split('\n')) # array of all untokenized trace documents
+all_traces = all_traces[:-1] # remove last blank newline from list 
+
+g = open(labels_path, "r") #open labels.txt
+all_labels = (g.read().split('\n'))
+all_labels = all_labels[:-1] # remove last blank newline from list 
+
+#limit data and labels to a smaller subsection 
+all_traces, all_labels = shuffle(all_traces, all_labels, random_state=42) 
+all_traces = all_traces[:] 
+all_labels = all_labels[:]
+
+tracedoc_names = {} # dict of all trace document names 
+for _ in range(len(all_traces)):
+    tracedoc_names[_] = _  
+    
+#dict of names and traces 
+name_trace_dict = {}
+for i in range(len(tracedoc_names)):
+    name_trace_dict[tracedoc_names[i]] = all_traces[i] #name_trace_dict['F9T338'] = HeapFree HeapAlloc.. #full trace document 
+    
+trace_document_name_list = list(name_trace_dict.keys()) #list of trace document names [0-7106]
+distinct_labels = sorted(list(set(all_labels))) # sorted distinct set list of labels 
+
+
+
+## ORIGINAL FAMILIES: FAMILY LABEL AND TRACES THEY CONTAIN 
+
+original_families = [] #trace document names belonging in each original family
+all_original_fam_names = [] #list of all names
+
+for i in distinct_labels: # for every distinct family label
+    temp = []
+    
+    for j in range(len(all_labels)): # check every label of the trace documents
+        if all_labels[j] == i: # if the trace document label = the label
+            temp.append(trace_document_name_list[j]) # append the trace document name to the family list 
+            all_original_fam_names.append(trace_document_name_list[j])
+            
+    original_families.append(temp)
+     
+original_families_traces_untokenized = []    
+for x in original_families: #untokenized
+    temp = []
+    for y in x:
+        temp.append(name_trace_dict[y])
+    
+    original_families_traces_untokenized.append(temp)
+    
+
+### ALL SELECTED FAMILY (ONE, TWO, OR THREE+ FAMILIES) TRACES, LABELS, AND TRACE NAMES
+all_sel_fam_traces = []
+all_sel_fam_labels = []
+all_sel_fam_names = {}
+for x in range(len(original_families_traces_untokenized)):
+    for y in original_families_traces_untokenized[x]:
+        all_sel_fam_traces.append(y)
+        all_sel_fam_labels.append(x)
+        
+for x in range(len(all_sel_fam_traces)):
+    all_sel_fam_names[x] = (all_original_fam_names[x])  
+        
+all_traces_list = [all_sel_fam_traces, all_sel_fam_labels, all_original_fam_names]
+
+# SAVE Original Family Trace Document Data
+#np.savetxt("Original_traceDocs.csv", all_traces_list[0], delimiter=",", fmt='%s')
+#np.savetxt("Original_labels.csv", all_traces_list[1], delimiter=",", fmt='%.3e')
+#np.savetxt("Original_traceNames.csv",all_traces_list[2], delimiter=",", fmt='%.3e')
+
+
+calc_and_save_jaccard_matrix(all_sel_fam_traces)
+calc_and_save_cosine_matrix(all_sel_fam_traces)
+
+
