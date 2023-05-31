@@ -1,1 +1,0 @@
- HeapAlloc HeapAlloc HeapFree HeapAlloc HeapFree HeapFree NtOpenKey LoadLibraryW GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress GetProcAddress HeapAlloc GetCurrentThreadId NtOpenKey NtQueryValueKey HeapAlloc HeapAlloc HeapFree HeapFree HeapAlloc HeapAlloc HeapFree HeapFree GetCurrentProcess 
